@@ -25,6 +25,8 @@
 
 </script>
 
-<LightSwitch />
+<div class="p-3">
+	<LightSwitch />
+</div>
 
 <slot />

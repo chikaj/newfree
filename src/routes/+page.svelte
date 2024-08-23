@@ -3,68 +3,82 @@
 	import { scaleTime } from 'd3-scale';
 	import { Chart, Svg, Axis, Spline, Frame, Rule } from 'layerchart';
 	import { DateRangePicker, type DateRange, DropdownMenu } from 'bits-ui';
+	import { CaretLeft, CaretRight, Calendar } from '$icons/index';
+
+	/* Used as the text of the dropdown menu */
 	let menuOption = 'Single Night';
+
+	/* Used in the DateRangePicker */
 	let value: DateRange | undefined = undefined;
 
 	// import { mydata } from './mydata';
 	// console.log(mydata);
 
 	export let data: PageData;
-	// console.log(data.dataj);
 
-	let updatedData = data.dataj.map((i) => ({
-		...i,
-		date: new Date(i.localtime)
-	}));
-	// console.log(updatedData);
-
-	let jds = Array.from(new Set(updatedData.map((i) => i.jd)));
-
-	let groupDateMap = updatedData.reduce((acc, item) => {
+	/*
+	Create array of unique objects by Julian Day (and date)
+	*/
+	let groupDateMap = data.dataj.reduce((acc, item) => {
 		if (!acc[item.jd]) {
-			acc[item.jd] = item.date;
+			acc[item.jd] = item.datetime;
 		} else {
 			// Compare dates and store the earliest one
-			if (new Date(item.date) < new Date(acc[item.jd])) {
-				acc[item.jd] = item.date;
+			if (new Date(item.datetime) < new Date(acc[item.jd])) {
+				acc[item.jd] = item.datetime;
 			}
 		}
 		return acc;
 	}, {});
 
 	// Convert the map to an array of objects with jd and date
-	let nights = Object.entries(groupDateMap).map(([jd, date]) => ({ jd, date }));
-	console.log(nights);
+	let nightList = Object.entries(groupDateMap).map(([jd, date]) => ({
+		jd: Number(jd),
+		date
+	}));
 
-	console.log(`jds length: ${jds.length}; jds length: ${jds.length}`);
+	let currentNight = nightList.length - 1;
 
-	let minNightIndex = 0;
-	let maxNightIndex = jds.length - 1;
+	function incrementNight(): void {
+		if (currentNight < nightList.length - 1) {
+			currentNight = currentNight + 1;
+		}
+	}
 
-	let currentNight = maxNightIndex;
+	function decrementNight(): void {
+		if (currentNight > 0) {
+			currentNight = currentNight - 1;
+		}
+	}
 
-	const singleNightData = updatedData.filter((obj) => obj.jd === jds[currentNight]);
-	// console.log(singleNightData);
+	$: filteredData = data.dataj.filter((obj) => obj.jd === nightList[currentNight].jd);
+
 </script>
 
-<DropdownMenu.Root>
-	<DropdownMenu.Trigger
-		class="w-40 p-3 bg-secondary-700 focus-visible inline-flex items-center justify-center rounded border border-border-input bg-background-alt font-medium text-foreground shadow-btn hover:bg-muted focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-98"
-	>
-		{menuOption}
-	</DropdownMenu.Trigger>
-	<DropdownMenu.Content
-		sameWidth={true}
-		class="p-2 bg-secondary-700/50 border-2 border-secondary-700"
-	>
-		<DropdownMenu.Item on:click={() => (menuOption = 'Single Night')}
-			>Single Night</DropdownMenu.Item
+<div class="p-3">
+	<DropdownMenu.Root>
+		<DropdownMenu.Trigger
+			class="w-40 p-3 bg-secondary-700 focus-visible inline-flex items-center justify-center rounded border border-border-input bg-background-alt font-medium text-foreground shadow-btn hover:bg-muted focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-98"
 		>
-		<DropdownMenu.Item on:click={() => (menuOption = 'Multiple Nights')}
-			>Multiple Nights</DropdownMenu.Item
+			{menuOption}
+		</DropdownMenu.Trigger>
+		<DropdownMenu.Content
+			sameWidth={true}
+			class="p-2 bg-secondary-700/50 border-2 border-secondary-700"
 		>
-	</DropdownMenu.Content>
-</DropdownMenu.Root>
+			<DropdownMenu.Item on:click={() => (menuOption = 'Single Night')}
+				>Single Night</DropdownMenu.Item
+			>
+			<DropdownMenu.Item on:click={() => (menuOption = 'Multiple Nights')}
+				>Multiple Nights</DropdownMenu.Item
+			>
+		</DropdownMenu.Content>
+	</DropdownMenu.Root>
+</div>
+
+<h3 class="text-md pl-8">
+	{nightList[currentNight].date.toString()} || ({nightList[currentNight].jd})
+</h3>
 
 <!-- {#if menuOption === 'Multiple Nights'}
 	<DateRangePicker.Root bind:value weekdayFormat="short" fixedWeeks={true}>
@@ -184,22 +198,30 @@
 	</DateRangePicker.Root>
 {/if} -->
 
-<div class="h-[300px] p-4 border rounded">
-	<Chart
-		data={singleNightData}
-		x="date"
-		xScale={scaleTime()}
-		y="msas"
-		yDomain={[23, 10]}
-		yNice
-		padding={{ left: 16, bottom: 24 }}
-	>
-		<Svg>
-			<Axis placement="left" grid rule />
-			<Axis placement="bottom" rule />
-			<Spline class="stroke-2 stroke-primary-400" />
-		</Svg>
-	</Chart>
+<div class="flex flex-row items-center">
+	<button class="p-2" on:click={decrementNight}>
+		<CaretLeft />
+	</button>
+	<div class="h-[500px] w-full p-4 border rounded">
+		<Chart
+			data={filteredData}
+			x="date"
+			xScale={scaleTime()}
+			y="msas"
+			yDomain={[23, 10]}
+			yNice
+			padding={{ left: 16, bottom: 24 }}
+		>
+			<Svg>
+				<Axis placement="left" grid rule />
+				<Axis placement="bottom" rule />
+				<Spline class="stroke-2 stroke-primary-400" />
+			</Svg>
+		</Chart>
+	</div>
+	<button class="p-2" on:click={incrementNight}>
+		<CaretRight />
+	</button>
 </div>
 
 <!-- format={(d) => formatDate(d, PeriodType.Day, { variant: 'short' })} -->

@@ -70,17 +70,14 @@ export function data2json(data: Array<Array<string>>, timezone: string): Array<o
     let obj: Array<object> = [];
 
     for (const line of data) {
+
+        let dt = DateTime.fromISO(line[0]).setZone('America/Chicago');
+
         obj.push({
             "utc": line[0] + 'Z',
-            "localtime": line[1],
-            // "12-hours-earlier": DateTime.fromISO(line[0] + 'Z').setZone(timezone).minus({hours: 12}).toString(),
-            "jd": Math.round(
-                DateTime.fromISO(line[0] + 'Z')
-                .setZone(timezone)
-                .toSeconds()/(60*60*24) + 2440587.5
-                ),
-            // "hour-of-day": getTimeOfDay(DateTime.fromISO(line[0] + 'Z').setZone(timezone), 'hours'),
-            // "hour-of-night": getTimeOfNight(DateTime.fromISO(line[0] + 'Z').setZone(timezone), 'hours'),
+            "date": new Date(line[1]),
+            "datetime": dt,
+            "jd": Math.round(dt.toMillis() / 86400000 + 2440587.5),
             "temperature": Number(line[2]),
             "voltage": Number(line[3]),
             "msas": Number(line[4]),

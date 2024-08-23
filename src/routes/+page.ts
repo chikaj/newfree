@@ -8,11 +8,17 @@ let items: Array<String> = [];
 
 export const load: PageLoad = async ({ fetch }) => {
     try {
-        const res = await fetch('/sqmdata/freeman/20231109_131602.dat');
-        // const res = await fetch('/sqmdata/freeman/20240306_131818_4.dat');
+        // const res = await fetch('/sqmdata/freeman/20231109_131602.dat');
+        const res = await fetch('/sqmdata/freeman/20240306_131818_4.dat');
         text = await res.text();
+        // console.log("Text:")
+        // console.log(text);
 
-        items = text.split('\r\n');
+        // items = text.split('\r\n');
+        text = text.replace('\r', '');
+        items = text.split('\n');
+        // console.log("Items:")
+        // console.log(items);
 
         let metadata = items.filter((value) => {
             let firstLetter = value.split('')[0];
@@ -22,6 +28,8 @@ export const load: PageLoad = async ({ fetch }) => {
         }).map((value) => {
             return value.slice(2).split(',');
         });
+        // console.log("Metadata:")
+        // console.log(metadata);
         
         const tz = metadataTimezone(getLineFromMetadata(metadata, 'Local timezone'));
         
@@ -32,17 +40,16 @@ export const load: PageLoad = async ({ fetch }) => {
             }
         }).map((value) => {
             return value.split(';');
-            // return value.split(' ');
         });
+        // console.log(data);
 
         let dataj = data2json(data, tz);
         console.log(dataj);
+        // let areTheyErrors = dataj.filter(item => item.jd === 2460312);
+        // console.log(areTheyErrors);
         
         return {
-            // sqm: JSON.stringify(data),
-            // dataj: JSON.stringify(dataj),
             dataj: dataj,
-            // metadata: JSON.stringify(metadata),
             metadata: metadata,
             timezone: tz
         }
